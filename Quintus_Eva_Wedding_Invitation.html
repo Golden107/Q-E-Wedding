@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#eef5f2" />
+  <title>Quintus & Eva｜Wedding Invitation</title>
+
+  <!--
+  ============================================================
+  Quintus & Eva Wedding Invitation
+  Single-file v6 / RWD / Enlarged Invitation Date Badge / Fixed Hero Title Clipping / Envelope-to-Hero Transition / Watercolor Botanical Parallax
+  ============================================================
+
+  【最常需要修改的位置】
+  1. 搜尋 SETTINGS 修改婚禮日期、飯店、Google Sheet URL
+  2. 搜尋 HERO_PHOTO_1 / 2 / 3 替換婚紗照
+  3. 搜尋 seatData 修改桌次資料
+  4. 搜尋 wedding.mp3 修改背景音樂網址/檔名
+
+  Google Sheet RSVP：
+  將 GAS_WEB_APP_URL 改成你部署好的 Google Apps Script Web App URL。
+  本頁使用 URLSearchParams + no-cors POST，較容易與 GAS Web App 搭配。
+  -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Great+Vibes&family=Noto+Serif+TC:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --paper:#fbfaf5;
+      --paper-2:#f6f3ea;
+      --sage:#a9c5bd;
+      --sage-deep:#6f9489;
+      --sage-dark:#4f6f67;
+      --mist:#dceae6;
+      --blue:#adcbd1;
+      --leaf:#7e9b78;
+      --leaf-deep:#587456;
+      --berry:#c6878b;
+      --gold:#b8a06e;
+      --ink:#5f5a55;
+      --muted:#8c8780;
+      --line:rgba(111,148,137,.22);
+      --white:rgba(255,255,255,.92);
+      --shadow:0 20px 55px rgba(63,75,70,.14);
+      --shadow-soft:0 12px 32px rgba(63,75,70,.09);
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(173,203,209,.11), transparent 28%),
+        radial-gradient(circle at 80% 25%, rgba(169,197,189,.10), transparent 26%),
+        var(--paper);
+      font-family:"Noto Serif TC","PingFang TC","Microsoft JhengHei",serif;
+      overflow-x:hidden;
+    }
+    body.locked{overflow:hidden}
+    img{display:block;width:100%}
+    a{color:inherit;text-decoration:none}
+    button,input,select,textarea{font:inherit}
+
+    /* subtle paper texture */
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none; z-index:999;
+      opacity:.16;
+      mix-blend-mode:multiply;
+      background-image:
+        radial-gradient(rgba(76,84,77,.18) .45px, transparent .45px);
+      background-size:4px 4px;
+    }
+
+    .container{width:min(1120px,calc(100% - 34px));margin:auto}
+    .narrow{width:min(820px,calc(100% - 34px));margin:auto}
+    .section{position:relative;padding:100px 0;overflow:hidden}
+    .soft{background:linear-gradient(180deg,rgba(235,244,241,.68),rgba(250,248,243,.82))}
+    .white{background:rgba(255,255,255,.52)}
+
+    .section-head{text-align:center;margin:0 auto 44px;max-width:720px}
+    .kicker{
+      margin:0 0 10px;
+      color:var(--sage-deep);
+      font-family:"Cormorant Garamond",serif;
+      font-size:13px;
+      letter-spacing:.32em;
+      text-transform:uppercase;
+    }
+    .section-head h2{
+      margin:0;
+      color:#59534e;
+      font-family:"Cormorant Garamond","Noto Serif TC",serif;
+      font-size:clamp(34px,5vw,56px);
+      font-weight:500;
+      line-height:1.1;
+    }
+    .section-head::after{
+      content:"";
+      display:block;
+      width:52px;height:1px;margin:21px auto 0;
+      background:linear-gradient(90deg,transparent,var(--gold),transparent)
+    }
+
+    /* =========================
+       Watercolor leaves
+    ========================== */
+    .botanical{
+      position:absolute;
+      z-index:0;
+      width:min(36vw,420px);
+      pointer-events:none;
+      opacity:.68;
+      filter:saturate(.9);
+    }
+    .botanical.top-left{top:-70px;left:-95px;transform:rotate(-13deg)}
+    .botanical.bottom-right{right:-105px;bottom:-90px;transform:rotate(165deg)}
+    .botanical.small{width:min(28vw,310px);opacity:.55}
+    .section > .container,
+    .section > .narrow,
+    .section > .section-head{position:relative;z-index:2}
+
+    .watercolor-leaf{filter:url(#wc);mix-blend-mode:multiply}
+    .wash{filter:url(#wash)}
+
+    /* =========================
+       Opening overlay
+    ========================== */
+    .opening{
+      position:fixed;
+      inset:0;
+      z-index:1000;
+      display:grid;
+      place-items:center;
+      min-height:100dvh;
+      padding:24px;
+      background:
+        radial-gradient(circle at 20% 12%, rgba(173,203,209,.36), transparent 32%),
+        radial-gradient(circle at 75% 75%, rgba(169,197,189,.34), transparent 35%),
+        linear-gradient(145deg,#f7f4ec,#eef5f2 55%,#f5efe8);
+      transition:opacity .8s ease,visibility .8s ease;
+    }
+    .opening.hide{
+      opacity:0;
+      visibility:hidden;
+      pointer-events:none;
+    }
+    .opening-inner{
+      width:min(520px,100%);
+      text-align:center;
+      position:relative;
+    }
+    .opening-title{
+      margin:0 0 24px;
+      font-family:"Cormorant Garamond",serif;
+      letter-spacing:.25em;
+      font-size:13px;
+      color:var(--sage-dark);
+    }
+    .envelope-scene{
+      width:min(420px,84vw);
+      aspect-ratio:1.48/1;
+      margin:0 auto 28px;
+      position:relative;
+      perspective:1200px;
+      filter:drop-shadow(0 24px 35px rgba(70,80,76,.16));
+    }
+    .envelope{
+      position:absolute;inset:0;
+      border-radius:6px 6px 12px 12px;
+      background:#e7efeb;
+      overflow:visible;
+    }
+    .env-back{
+      position:absolute;inset:0;
+      border-radius:inherit;
+      background:
+        linear-gradient(135deg,rgba(255,255,255,.75),rgba(197,220,213,.58)),
+        #dfeae6;
+      border:1px solid rgba(111,148,137,.24);
+    }
+    .env-left,.env-right,.env-bottom{
+      position:absolute;inset:0;pointer-events:none;
+    }
+    .env-left{
+      clip-path:polygon(0 0,52% 52%,0 100%);
+      background:linear-gradient(135deg,#eff5f2,#dbe9e4);
+      border-radius:6px 0 0 12px;
+    }
+    .env-right{
+      clip-path:polygon(100% 0,48% 52%,100% 100%);
+      background:linear-gradient(225deg,#edf4f1,#d9e7e2);
+      border-radius:0 6px 12px 0;
+    }
+    .env-bottom{
+      clip-path:polygon(0 100%,50% 44%,100% 100%);
+      background:linear-gradient(0deg,#d5e4df,#eaf2ef);
+      border-radius:0 0 12px 12px;
+    }
+    .env-flap{
+      position:absolute;
+      left:0;top:0;width:100%;height:58%;
+      transform-origin:top;
+      transform:rotateX(0deg);
+      transition:transform 1s cubic-bezier(.2,.8,.2,1);
+      z-index:7;
+      clip-path:polygon(0 0,100% 0,50% 100%);
+      background:
+        linear-gradient(180deg,#edf5f2,#d8e7e2);
+      border-top:1px solid rgba(111,148,137,.25);
+      backface-visibility:hidden;
+    }
+    .letter{
+      position:absolute;
+      left:8%;right:8%;bottom:9%;
+      height:84%;
+      z-index:4;
+      background:
+        linear-gradient(rgba(255,255,255,.7),rgba(255,255,255,.7)),
+        repeating-linear-gradient(0deg,transparent 0 6px,rgba(160,153,140,.02) 6px 7px),
+        #fffdf7;
+      border:1px solid rgba(151,145,135,.17);
+      box-shadow:0 8px 22px rgba(65,73,69,.10);
+      display:grid;
+      place-items:center;
+      transition:transform 1.15s cubic-bezier(.2,.85,.2,1),opacity .9s ease;
+    }
+    .letter-inner{
+      padding:20px 18px 18px;
+      width:100%;
+      height:100%;
+      position:relative;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 16% 82%, rgba(173,203,209,.12), transparent 22%),
+        radial-gradient(circle at 84% 12%, rgba(169,197,189,.12), transparent 24%);
+    }
+    .letter-small{
+      position:relative;
+      z-index:3;
+      margin-top:9px;
+      font-family:"Cormorant Garamond",serif;
+      letter-spacing:.20em;
+      font-size:10px;
+      color:#89928d;
+    }
+    .letter-band{
+      position:absolute;
+      left:0; right:0;
+      top:34%;
+      height:31%;
+      background:
+        linear-gradient(90deg,
+          rgba(172,204,201,.84),
+          rgba(156,193,189,.88) 45%,
+          rgba(180,210,207,.82)
+        );
+      border-top:1px solid rgba(255,255,255,.34);
+      border-bottom:1px solid rgba(112,148,139,.18);
+      z-index:1;
+    }
+    .letter-names{
+      position:relative;
+      z-index:3;
+      margin:33px 0 0;
+      font-family:"Great Vibes",cursive;
+      font-size:clamp(37px,8vw,53px);
+      color:#fff;
+      line-height:1;
+      text-shadow:0 3px 12px rgba(76,106,99,.15);
+    }
+    .letter-date{
+      position:absolute;
+      z-index:3;
+      left:0; right:0;
+      bottom:22px;
+      margin:0;
+      color:#878b87;
+      font-family:"Cormorant Garamond",serif;
+      letter-spacing:.08em;
+      font-size:15px;
+      line-height:1.25;
+    }
+    .letter-date small{
+      display:block;
+      margin-top:4px;
+      font-size:9px;
+      letter-spacing:.18em;
+    }
+    .cover-leaf{
+      position:absolute;
+      z-index:2;
+      opacity:.72;
+      pointer-events:none;
+      filter:url(#wc);
+    }
+    .cover-leaf.one{
+      width:120px;
+      left:-30px;
+      bottom:-17px;
+      transform:rotate(-17deg);
+    }
+    .cover-leaf.two{
+      width:130px;
+      right:-36px;
+      top:-20px;
+      transform:rotate(158deg);
+    }
+    .cover-splash{
+      position:absolute;
+      z-index:0;
+      width:90px;height:55px;
+      border-radius:50%;
+      background:rgba(169,203,209,.18);
+      filter:url(#wash);
+    }
+    .cover-splash.s1{left:25px;bottom:22px;transform:rotate(-18deg)}
+    .cover-splash.s2{right:32px;top:28px;transform:rotate(20deg)}
+    .seal{
+      position:absolute;
+      left:50%;top:53%;
+      translate:-50% -50%;
+      width:58px;height:58px;border-radius:50%;
+      display:grid;place-items:center;
+      z-index:8;
+      background:
+        radial-gradient(circle at 35% 30%,#adc9bf,#789b91 68%,#5f8178);
+      color:white;
+      font-family:"Great Vibes",cursive;
+      font-size:20px;
+      box-shadow:inset 0 0 0 2px rgba(255,255,255,.18),0 7px 14px rgba(68,87,80,.2);
+      transition:opacity .4s ease,transform .6s ease;
+    }
+    .opening.opened .env-flap{transform:rotateX(180deg);z-index:2}
+    .opening.opened .letter{transform:translateY(-48%);z-index:6}
+    .opening.opened .seal{opacity:0;transform:scale(.7)}
+    .opening.opened .open-btn{opacity:0;pointer-events:none;transform:translateY(6px)}
+
+    .open-btn{
+      border:1px solid rgba(79,111,103,.48);
+      background:rgba(255,255,255,.5);
+      color:var(--sage-dark);
+      padding:13px 26px;
+      border-radius:999px;
+      letter-spacing:.14em;
+      font-size:13px;
+      cursor:pointer;
+      transition:.3s ease;
+      backdrop-filter:blur(8px);
+    }
+    .open-btn:hover{background:var(--sage-dark);color:white;transform:translateY(-1px)}
+    .opening-note{margin:13px 0 0;font-size:12px;color:#9a958f}
+
+    /* =========================
+       Navigation
+    ========================== */
+    .nav{
+      position:fixed;z-index:60;
+      top:0;left:0;right:0;
+      height:72px;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 max(20px,env(safe-area-inset-left));
+      transition:.35s ease;
+      color:white;
+    }
+    .nav.scrolled{
+      background:rgba(250,248,243,.88);
+      color:var(--ink);
+      backdrop-filter:blur(14px);
+      box-shadow:0 8px 25px rgba(60,70,65,.06);
+    }
+    .brand{
+      font-family:"Great Vibes",cursive;
+      font-size:30px;
+      white-space:nowrap;
+    }
+    .nav-links{
+      list-style:none;margin:0;padding:0;
+      display:flex;gap:22px;align-items:center;
+    }
+    .nav-links a{font-size:13px;letter-spacing:.06em}
+    .menu-btn{
+      display:none;
+      border:0;background:transparent;color:inherit;
+      width:44px;height:44px;border-radius:50%;
+      font-size:23px;cursor:pointer;
+    }
+
+    /* =========================
+       Hero
+    ========================== */
+    .hero{
+      position:relative;
+      min-height:100svh;
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+      color:white;
+      background:#60756f;
+    }
+    .slides,.slide,.hero-shade{position:absolute;inset:0}
+    .slide{
+      opacity:0;
+      background-size:cover;
+      background-position:center;
+      transform:scale(1.04);
+      transition:opacity 1.5s ease,transform 6.5s ease;
+    }
+    .slide.active{opacity:1;transform:scale(1.12)}
+    .hero-shade{
+      background:
+        linear-gradient(180deg,rgba(28,43,39,.25),rgba(26,42,38,.20) 40%,rgba(20,34,31,.48)),
+        radial-gradient(circle at center,transparent 20%,rgba(20,34,31,.22));
+      z-index:1;
+    }
+    .hero-center{
+      position:relative;z-index:2;
+      width:min(920px,calc(100% - 34px));
+      text-align:center;
+      padding-top:46px;
+    }
+    .hero-center.hero-enter{
+      animation:heroEnter .95s cubic-bezier(.2,.8,.2,1) both;
+    }
+    @keyframes heroEnter{
+      from{opacity:0;transform:translateY(18px) scale(.985)}
+      to{opacity:1;transform:none}
+    }
+    .hero-kicker{
+      margin:0 0 14px;
+      letter-spacing:.34em;
+      font-family:"Cormorant Garamond",serif;
+      font-size:13px;
+    }
+    .hero-names{
+      margin:0 auto;
+      max-width:min(96vw, 1500px);
+      padding:0 18px;
+      font-family:"Great Vibes",cursive;
+      font-weight:400;
+      font-size:clamp(64px,10.2vw,138px);
+      line-height:.96;
+      text-shadow:0 12px 40px rgba(0,0,0,.24);
+      text-wrap:balance;
+    }
+    .write{
+      display:inline-block;
+      padding-inline:.08em;
+      opacity:0;
+      filter:blur(2px);
+      transform:translateY(16px) scale(.985);
+      animation:writeFade 1.15s cubic-bezier(.18,.8,.25,1) forwards;
+    }
+    .write.two{animation-delay:.7s}
+    @keyframes writeFade{
+      to{
+        opacity:1;
+        filter:none;
+        transform:none;
+      }
+    }
+    .amp-mark{
+      display:inline-block;
+      padding:0 .06em;
+      opacity:.95;
+    }
+    .hero-cn{font-size:15px;letter-spacing:.22em;margin:18px 0 5px}
+    .hero-date{
+      font-family:"Cormorant Garamond",serif;
+      font-size:20px;letter-spacing:.16em;margin:0 0 28px
+    }
+    .hero-btn{
+      display:inline-block;
+      padding:12px 23px;
+      border:1px solid rgba(255,255,255,.62);
+      border-radius:999px;
+      background:rgba(255,255,255,.08);
+      backdrop-filter:blur(6px);
+      font-size:13px;
+      letter-spacing:.1em;
+      transition:.25s ease;
+    }
+    .hero-btn:hover{background:white;color:#58756d}
+    .scroll-mark{
+      position:absolute;z-index:2;
+      bottom:25px;left:50%;transform:translateX(-50%);
+      font-family:"Cormorant Garamond",serif;
+      font-size:11px;letter-spacing:.25em;
+      opacity:.86;
+    }
+    .scroll-mark::after{
+      content:"";display:block;margin:9px auto 0;
+      width:1px;height:28px;background:rgba(255,255,255,.68);
+      animation:scrollLine 1.8s ease-in-out infinite;
+    }
+    @keyframes scrollLine{50%{transform:scaleY(.55);transform-origin:top}}
+
+    /* =========================
+       Intro + story
+    ========================== */
+    .intro-copy{
+      margin:auto;
+      max-width:690px;
+      text-align:center;
+      line-height:2.25;
+      font-size:16px;
+      color:#6d6862;
+    }
+    .date-emblem{
+      width:176px;
+      height:176px;
+      margin:40px auto 0;
+      border-radius:50%;
+      border:1.5px solid rgba(184,160,110,.52);
+      display:grid;
+      place-items:center;
+      background:rgba(255,255,255,.72);
+      box-shadow:
+        inset 0 0 0 9px rgba(255,255,255,.36),
+        0 14px 34px rgba(95,90,85,.07);
+      text-align:center;
+    }
+    .date-emblem .big-date{
+      display:block;
+      font-family:"Cormorant Garamond",serif;
+      font-size:42px;
+      font-weight:600;
+      line-height:1;
+      letter-spacing:.03em;
+      color:#675f59;
+    }
+    .date-emblem small{
+      display:block;
+      color:var(--sage-deep);
+      font-size:14px;
+      font-weight:500;
+      letter-spacing:.18em;
+      margin-top:12px;
+    }
+
+    .timeline{
+      max-width:820px;margin:auto;position:relative
+    }
+    .timeline::before{
+      content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)
+    }
+    .time-item{
+      width:50%;padding:16px 48px 24px;position:relative
+    }
+    .time-item:nth-child(even){margin-left:50%}
+    .time-item:nth-child(odd){text-align:right}
+    .time-item::after{
+      content:"";position:absolute;top:28px;width:10px;height:10px;border-radius:50%;
+      background:var(--sage-deep);box-shadow:0 0 0 7px rgba(169,197,189,.18)
+    }
+    .time-item:nth-child(odd)::after{right:-5px}
+    .time-item:nth-child(even)::after{left:-5px}
+    .year{font-family:"Cormorant Garamond",serif;color:var(--sage-deep);letter-spacing:.16em;font-size:14px}
+    .time-item h3{margin:5px 0 8px;font-size:20px;font-weight:500}
+    .time-item p{margin:0;font-size:14px;line-height:1.9;color:#77716a}
+
+    /* =========================
+       Countdown
+    ========================== */
+    .count-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      max-width:820px;margin:auto;gap:14px;
+    }
+    .count-card{
+      min-height:150px;
+      display:grid;place-items:center;
+      text-align:center;
+      background:rgba(255,255,255,.72);
+      border:1px solid rgba(111,148,137,.12);
+      border-radius:22px;
+      box-shadow:var(--shadow-soft);
+      backdrop-filter:blur(5px);
+    }
+    .count-card strong{
+      display:block;
+      font-family:"Cormorant Garamond",serif;
+      font-size:clamp(42px,6vw,66px);
+      font-weight:500;line-height:1;color:var(--sage-dark)
+    }
+    .count-card span{display:block;margin-top:7px;font-size:11px;letter-spacing:.18em;color:var(--muted)}
+
+    /* =========================
+       Fullscreen photo transitions
+    ========================== */
+    .cinema{
+      position:relative;
+      height:min(88vh,820px);
+      min-height:560px;
+      overflow:hidden;
+      background:#42544f;
+    }
+    .cinema-frame{position:absolute;inset:0;opacity:0;transition:opacity 1.6s ease}
+    .cinema-frame.active{opacity:1}
+    .cinema-frame img{width:100%;height:100%;object-fit:cover}
+    .cinema-frame::after{
+      content:"";position:absolute;inset:0;
+      background:linear-gradient(180deg,rgba(24,37,33,.12),rgba(24,37,33,.36))
+    }
+    .cinema-caption{
+      position:absolute;z-index:3;left:50%;bottom:48px;transform:translateX(-50%);
+      width:min(900px,calc(100% - 42px));text-align:center;color:white;
+    }
+    .cinema-caption small{letter-spacing:.28em;font-size:11px}
+    .cinema-caption h2{
+      font-family:"Great Vibes",cursive;font-size:clamp(48px,8vw,92px);
+      font-weight:400;margin:5px 0 0
+    }
+
+    /* =========================
+       IG wall
+    ========================== */
+    .ig-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .ig{
+      background:rgba(255,255,255,.82);
+      border:1px solid rgba(111,148,137,.10);
+      border-radius:19px;
+      overflow:hidden;
+      box-shadow:var(--shadow-soft);
+    }
+    .ig-photo{aspect-ratio:1/1;overflow:hidden}
+    .ig-photo img{height:100%;object-fit:cover;transition:transform .7s ease}
+    .ig:hover img{transform:scale(1.045)}
+    .ig-meta{padding:13px 15px 15px}
+    .ig-top{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+    .avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--sage))}
+    .ig-user{font-size:12px;color:#5e645f}
+    .ig-icons{font-size:15px;letter-spacing:.32em;margin-bottom:6px;color:#6e756f}
+    .ig-caption{font-size:12px;line-height:1.65;color:#7b7771}
+
+    /* =========================
+       Info cards
+    ========================== */
+    .info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+    .card{
+      background:rgba(255,255,255,.78);
+      border:1px solid rgba(111,148,137,.10);
+      border-radius:22px;
+      padding:28px;
+      box-shadow:var(--shadow-soft);
+    }
+    .card h3{
+      margin:0 0 12px;font-family:"Cormorant Garamond","Noto Serif TC",serif;
+      font-size:29px;font-weight:500;color:#5b625e
+    }
+    .card p,.card li{font-size:14px;line-height:1.9;color:#746f69}
+    .card ul{margin:0;padding-left:19px}
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      margin-top:14px;padding:10px 17px;border-radius:999px;
+      border:1px solid rgba(111,148,137,.42);
+      color:var(--sage-dark);font-size:13px;
+    }
+
+    /* =========================
+       Form + seat
+    ========================== */
+    .panel{
+      background:rgba(255,255,255,.79);
+      border:1px solid rgba(111,148,137,.10);
+      box-shadow:var(--shadow);
+      border-radius:26px;
+      padding:32px;
+      backdrop-filter:blur(7px);
+    }
+    .field{margin-bottom:18px}
+    .field label{display:block;margin:0 0 8px;font-size:13px;color:#6f6a65}
+    input,select,textarea{
+      width:100%;border:1px solid rgba(111,148,137,.25);
+      background:rgba(255,255,255,.88);
+      border-radius:14px;padding:14px 15px;outline:none;color:var(--ink);
+    }
+    input:focus,select:focus,textarea:focus{border-color:var(--sage-deep);box-shadow:0 0 0 3px rgba(111,148,137,.09)}
+    textarea{resize:vertical}
+    .two-col{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+    .primary{
+      border:0;background:linear-gradient(135deg,var(--sage-deep),var(--sage-dark));
+      color:white;padding:13px 22px;border-radius:999px;cursor:pointer;
+      box-shadow:0 10px 20px rgba(79,111,103,.18);
+      transition:.25s ease
+    }
+    .primary:hover{transform:translateY(-1px);filter:brightness(1.03)}
+    .status{margin:13px 0 0;color:var(--sage-dark);font-size:13px}
+
+    .seat-row{display:flex;gap:10px}
+    .seat-result{
+      margin-top:16px;border-radius:16px;padding:18px;
+      background:linear-gradient(135deg,rgba(220,234,230,.56),rgba(255,255,255,.78));
+      border:1px solid rgba(111,148,137,.12);
+      color:#617068;font-size:14px
+    }
+    .seat-result strong{font-size:18px;color:var(--sage-dark)}
+
+    /* =========================
+       Blessings
+    ========================== */
+    .blessing-layout{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+    .blessing-list{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    .note-card{
+      min-height:140px;
+      padding:20px;
+      border-radius:4px 18px 18px 18px;
+      background:
+        linear-gradient(rgba(255,255,255,.65),rgba(255,255,255,.65)),
+        #eef5f2;
+      box-shadow:var(--shadow-soft);
+      transform:rotate(var(--r,0deg));
+      border:1px solid rgba(111,148,137,.10);
+    }
+    .note-card h4{margin:0 0 8px;color:var(--sage-dark);font-size:15px}
+    .note-card p{margin:0;font-size:13px;line-height:1.8;color:#746f69}
+
+    /* =========================
+       Footer / music
+    ========================== */
+    footer{
+      position:relative;overflow:hidden;
+      text-align:center;color:white;
+      padding:72px 20px;
+      background:
+        linear-gradient(180deg,rgba(79,111,103,.95),rgba(67,94,87,.98));
+    }
+    footer .footer-name{font-family:"Great Vibes",cursive;font-size:52px;margin:0 0 6px}
+    footer p{margin:0;opacity:.88;font-family:"Cormorant Garamond",serif;letter-spacing:.08em}
+    .music{
+      position:fixed;z-index:70;
+      right:max(18px,env(safe-area-inset-right));
+      bottom:max(18px,env(safe-area-inset-bottom));
+      width:52px;height:52px;border:0;border-radius:50%;
+      display:grid;place-items:center;cursor:pointer;
+      background:rgba(255,255,255,.9);
+      color:var(--sage-dark);
+      box-shadow:0 12px 30px rgba(60,70,65,.14);
+      backdrop-filter:blur(8px);
+    }
+    .music.playing{animation:pulse 2.3s ease-in-out infinite}
+    @keyframes pulse{50%{transform:scale(1.07)}}
+
+    /* reveal */
+    .reveal{opacity:0;transform:translateY(26px);transition:opacity .85s ease,transform .85s ease}
+    .reveal.show{opacity:1;transform:none}
+
+
+    /* =========================
+       Botanical parallax
+    ========================== */
+    .parallax-leaf{
+      will-change:transform;
+      transition:transform .16s linear;
+    }
+    .botanical.parallax-leaf{
+      transform:
+        translate3d(var(--px,0px),var(--py,0px),0)
+        rotate(var(--rot,0deg));
+    }
+    .botanical.top-left.parallax-leaf{--rot:-13deg}
+    .botanical.bottom-right.parallax-leaf{--rot:165deg}
+
+    /* accessibility */
+    @media (prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+    }
+
+    /* =========================
+       RWD
+    ========================== */
+    @media(max-width:900px){
+      .ig-grid{grid-template-columns:repeat(2,1fr)}
+      .blessing-layout{grid-template-columns:1fr}
+      .count-grid{grid-template-columns:repeat(2,1fr)}
+      .nav-links{
+        position:absolute;top:64px;right:16px;
+        width:min(280px,calc(100vw - 32px));
+        display:none;flex-direction:column;align-items:stretch;gap:0;
+        padding:12px;border-radius:18px;
+        background:rgba(249,247,241,.95);color:var(--ink);
+        box-shadow:var(--shadow);backdrop-filter:blur(16px)
+      }
+      .nav-links.open{display:flex}
+      .nav-links li a{display:block;padding:11px 12px;border-radius:10px}
+      .menu-btn{display:block}
+    }
+    @media(max-width:680px){
+      .section{padding:78px 0}
+      .info-grid,.two-col{grid-template-columns:1fr}
+      .timeline::before{left:15px}
+      .time-item,.time-item:nth-child(even){
+        width:100%;margin-left:0;padding:10px 12px 24px 46px;text-align:left
+      }
+      .time-item:nth-child(odd)::after,.time-item:nth-child(even)::after{left:10px;right:auto}
+      .cinema{min-height:480px;height:78vh}
+      .ig-grid{gap:10px}
+      .panel{padding:22px}
+      .seat-row{flex-direction:column}
+      .blessing-list{grid-template-columns:1fr}
+      .botanical{width:300px;opacity:.48}
+    }
+    @media(max-width:470px){
+      .hero-names{
+        font-size:60px;
+        max-width:94vw;
+        line-height:1.02;
+      }
+      .hero-cn{font-size:13px;letter-spacing:.16em}
+      .date-emblem{
+        width:154px;
+        height:154px;
+      }
+      .date-emblem .big-date{font-size:36px}
+      .date-emblem small{font-size:12px}
+      .count-card{min-height:122px}
+      .count-card strong{font-size:44px}
+      .ig-grid{grid-template-columns:1fr}
+      .section-head{margin-bottom:34px}
+      .opening-title{letter-spacing:.18em}
+      .letter-names{font-size:42px}
+    }
+  </style>
+</head>
+
+<body class="locked">
+
+  <!-- Shared SVG filters & leaf definition -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <filter id="wc" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency=".018" numOctaves="3" seed="7" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="4"/>
+        <feGaussianBlur stdDeviation=".25"/>
+      </filter>
+      <filter id="wash" x="-30%" y="-30%" width="160%" height="160%">
+        <feTurbulence type="fractalNoise" baseFrequency=".02" numOctaves="2" seed="9" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="7"/>
+        <feGaussianBlur stdDeviation="1.1"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- ============ Opening envelope ============ -->
+  <div class="opening" id="opening">
+    <div class="opening-inner">
+      <p class="opening-title">THE WEDDING IS CURRENTLY</p>
+
+      <div class="envelope-scene">
+        <div class="envelope">
+          <div class="env-back"></div>
+          <div class="letter">
+            <div class="letter-inner">
+              <div class="cover-splash s1"></div>
+              <div class="cover-splash s2"></div>
+
+              <svg class="cover-leaf one" viewBox="0 0 180 180" aria-hidden="true">
+                <path d="M21 157C56 113 86 76 149 25" fill="none" stroke="#6e9384" stroke-width="3.5" opacity=".75"/>
+                <ellipse cx="48" cy="126" rx="12" ry="30" transform="rotate(38 48 126)" fill="#8fb6ae" opacity=".70"/>
+                <ellipse cx="74" cy="99" rx="12" ry="31" transform="rotate(45 74 99)" fill="#789b87" opacity=".68"/>
+                <ellipse cx="103" cy="71" rx="11" ry="28" transform="rotate(48 103 71)" fill="#9ab4a0" opacity=".66"/>
+                <ellipse cx="128" cy="46" rx="10" ry="25" transform="rotate(52 128 46)" fill="#a8c9c8" opacity=".72"/>
+                <circle cx="143" cy="26" r="5.5" fill="#c98e96" opacity=".82"/>
+                <circle cx="154" cy="36" r="5" fill="#bd7d88" opacity=".78"/>
+              </svg>
+
+              <svg class="cover-leaf two" viewBox="0 0 180 180" aria-hidden="true">
+                <path d="M21 157C56 113 86 76 149 25" fill="none" stroke="#6e9384" stroke-width="3.5" opacity=".75"/>
+                <ellipse cx="48" cy="126" rx="12" ry="30" transform="rotate(38 48 126)" fill="#8fb6ae" opacity=".70"/>
+                <ellipse cx="74" cy="99" rx="12" ry="31" transform="rotate(45 74 99)" fill="#789b87" opacity=".68"/>
+                <ellipse cx="103" cy="71" rx="11" ry="28" transform="rotate(48 103 71)" fill="#9ab4a0" opacity=".66"/>
+                <ellipse cx="128" cy="46" rx="10" ry="25" transform="rotate(52 128 46)" fill="#a8c9c8" opacity=".72"/>
+              </svg>
+
+              <div class="letter-small">THE WEDDING IS CURRENTLY</div>
+              <div class="letter-band"></div>
+              <div class="letter-names">Quintus & Eva</div>
+              <div class="letter-date">
+                NOVEMBER · 22 · 2026
+                <small>SAVE THE DATE</small>
+              </div>
+            </div>
+          </div>
+          <div class="env-left"></div>
+          <div class="env-right"></div>
+          <div class="env-bottom"></div>
+          <div class="env-flap"></div>
+          <div class="seal">Q&E</div>
+        </div>
+      </div>
+
+      <button class="open-btn" id="openInvitation">OPEN INVITATION</button>
+      <p class="opening-note">點擊開啟喜帖 · 同時可啟用背景音樂</p>
+    </div>
+  </div>
+
+  <!-- ============ Nav ============ -->
+  <nav class="nav" id="nav">
+    <a class="brand" href="#home">Q & E</a>
+    <button class="menu-btn" id="menuBtn" aria-label="開啟選單">☰</button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#story">Our Story</a></li>
+      <li><a href="#countdown">Countdown</a></li>
+      <li><a href="#gallery">Gallery</a></li>
+      <li><a href="#info">Wedding Info</a></li>
+      <li><a href="#seat">Seat Lookup</a></li>
+      <li><a href="#rsvp">RSVP</a></li>
+      <li><a href="#blessings">Blessings</a></li>
+    </ul>
+  </nav>
+
+  <!-- ============ Hero ============ -->
+  <header class="hero" id="home">
+    <div class="slides">
+      <!-- HERO_PHOTO_1 -->
+      <div class="slide active" style="background-image:url('https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1800&q=85')"></div>
+      <!-- HERO_PHOTO_2 -->
+      <div class="slide" style="background-image:url('https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1800&q=85')"></div>
+      <!-- HERO_PHOTO_3 -->
+      <div class="slide" style="background-image:url('https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1800&q=85')"></div>
+    </div>
+    <div class="hero-shade"></div>
+
+    <div class="hero-center">
+      <p class="hero-kicker">WE ARE GETTING MARRIED</p>
+      <h1 class="hero-names">
+        <span class="write">Quintus</span>
+        <span class="amp-mark"> &amp; </span>
+        <span class="write two">Eva</span>
+      </h1>
+      <p class="hero-cn">黃俊銘 · 謝琬璇</p>
+      <p class="hero-date">2026 / 11 / 22 · SUNDAY</p>
+      <a class="hero-btn" href="#rsvp">回覆出席 RSVP</a>
+    </div>
+    <div class="scroll-mark">SCROLL</div>
+  </header>
+
+  <!-- ============ Intro ============ -->
+  <section class="section white">
+
+    <svg class="botanical bottom-right small parallax-leaf" data-depth="0.16" viewBox="0 0 430 430" aria-hidden="true">
+      <g class="watercolor-leaf">
+        <path d="M74 345C150 270 214 194 344 86" fill="none" stroke="#779486" stroke-width="6" opacity=".42"/>
+        <ellipse cx="142" cy="285" rx="21" ry="58" transform="rotate(46 142 285)" fill="#91b4a9" opacity=".36"/>
+        <ellipse cx="199" cy="226" rx="21" ry="55" transform="rotate(51 199 226)" fill="#87a38d" opacity=".34"/>
+        <ellipse cx="258" cy="168" rx="20" ry="51" transform="rotate(56 258 168)" fill="#9fc2bf" opacity=".40"/>
+      </g>
+      <ellipse class="wash" cx="255" cy="215" rx="110" ry="54" fill="#b4d2d3" opacity=".10"/>
+    </svg>
+    <svg class="botanical top-left parallax-leaf" data-depth="0.10" viewBox="0 0 430 430" aria-hidden="true">
+      <g class="watercolor-leaf">
+        <path d="M64 360C130 264 195 180 330 72" fill="none" stroke="#789887" stroke-width="6" opacity=".55"/>
+        <ellipse cx="120" cy="294" rx="24" ry="60" transform="rotate(42 120 294)" fill="#91b7af" opacity=".45"/>
+        <ellipse cx="167" cy="239" rx="25" ry="66" transform="rotate(49 167 239)" fill="#82a69a" opacity=".42"/>
+        <ellipse cx="224" cy="185" rx="24" ry="58" transform="rotate(52 224 185)" fill="#6f9282" opacity=".4"/>
+        <ellipse cx="280" cy="132" rx="22" ry="52" transform="rotate(55 280 132)" fill="#a5c4c1" opacity=".5"/>
+        <ellipse cx="113" cy="334" rx="18" ry="50" transform="rotate(-34 113 334)" fill="#91a77f" opacity=".35"/>
+        <circle cx="295" cy="84" r="12" fill="#c78f92" opacity=".55"/>
+        <circle cx="317" cy="97" r="10" fill="#bf8087" opacity=".5"/>
+        <circle cx="292" cy="109" r="9" fill="#cf9aa0" opacity=".52"/>
+      </g>
+      <ellipse class="wash" cx="214" cy="215" rx="115" ry="58" fill="#b9d8d9" opacity=".13"/>
+    </svg>
+
+    <div class="narrow">
+      <div class="section-head reveal">
+        <p class="kicker">Invitation</p>
+        <h2>誠摯邀請您，共同見證幸福</h2>
+      </div>
+      <p class="intro-copy reveal">
+        從相遇、相知，到決定一起走向未來，<br>
+        我們希望在這個重要的日子裡，有最珍貴的你們陪伴。<br>
+        誠摯邀請您蒞臨婚禮，分享這份屬於我們的幸福與喜悅。
+      </p>
+      <div class="date-emblem reveal">
+        <div>
+          <span class="big-date">11 · 22</span>
+          <small>2026 · SUNDAY</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Story ============ -->
+  <section class="section soft" id="story">
+    <svg class="botanical bottom-right small parallax-leaf" data-depth="0.14" viewBox="0 0 430 430" aria-hidden="true">
+      <g class="watercolor-leaf">
+        <path d="M64 360C130 264 195 180 330 72" fill="none" stroke="#6f8d7c" stroke-width="6" opacity=".52"/>
+        <ellipse cx="120" cy="294" rx="24" ry="60" transform="rotate(42 120 294)" fill="#8fb5ac" opacity=".42"/>
+        <ellipse cx="167" cy="239" rx="25" ry="66" transform="rotate(49 167 239)" fill="#8ba590" opacity=".38"/>
+        <ellipse cx="224" cy="185" rx="24" ry="58" transform="rotate(52 224 185)" fill="#6d8d78" opacity=".39"/>
+        <ellipse cx="280" cy="132" rx="22" ry="52" transform="rotate(55 280 132)" fill="#abc7c7" opacity=".48"/>
+      </g>
+    </svg>
+
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="kicker">Our Story</p>
+        <h2>我們的故事</h2>
+      </div>
+      <div class="timeline">
+        <article class="time-item reveal">
+          <div class="year">2022</div>
+          <h3>第一次相遇</h3>
+          <p>在剛剛好的時間，我們遇見了彼此。原本平凡的一天，也因此成為故事的第一頁。</p>
+        </article>
+        <article class="time-item reveal">
+          <div class="year">2023</div>
+          <h3>一起收藏日常</h3>
+          <p>一起旅行、吃飯、分享生活，也開始習慣每個重要時刻都有彼此。</p>
+        </article>
+        <article class="time-item reveal">
+          <div class="year">2025</div>
+          <h3>Yes, I Do</h3>
+          <p>我們決定，把未來所有平凡的日子，變成屬於兩個人的幸福日常。</p>
+        </article>
+        <article class="time-item reveal">
+          <div class="year">2026</div>
+          <h3>Wedding Day</h3>
+          <p>而在這一天，我們想邀請最重要的你，與我們一起見證新的篇章。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Countdown ============ -->
+  <section class="section white" id="countdown">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="kicker">Counting Down</p>
+        <h2>距離我們的大日子</h2>
+      </div>
+      <div class="count-grid reveal">
+        <div class="count-card"><div><strong id="days">000</strong><span>DAYS</span></div></div>
+        <div class="count-card"><div><strong id="hours">00</strong><span>HOURS</span></div></div>
+        <div class="count-card"><div><strong id="minutes">00</strong><span>MINUTES</span></div></div>
+        <div class="count-card"><div><strong id="seconds">00</strong><span>SECONDS</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Full-screen photos ============ -->
+  <section class="cinema" aria-label="婚紗照全螢幕轉場">
+    <div class="cinema-frame active">
+      <img src="https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1800&q=85" alt="婚紗照示意 1">
+    </div>
+    <div class="cinema-frame">
+      <img src="https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1800&q=85" alt="婚紗照示意 2">
+    </div>
+    <div class="cinema-frame">
+      <img src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1800&q=85" alt="婚紗照示意 3">
+    </div>
+    <div class="cinema-caption">
+      <small>ONE DAY · ONE PROMISE · ONE FOREVER</small>
+      <h2>Our forever starts here.</h2>
+    </div>
+  </section>
+
+  <!-- ============ IG gallery ============ -->
+  <section class="section soft" id="gallery">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="kicker">Instagram Wall</p>
+        <h2>我們的照片日記</h2>
+      </div>
+      <div class="ig-grid">
+        <article class="ig reveal">
+          <div class="ig-photo"><img src="https://images.unsplash.com/photo-1522674163700-57eec4b6ffd2?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="ig-meta"><div class="ig-top"><span class="avatar"></span><span class="ig-user">quintus.and.eva</span></div><div class="ig-icons">♡ ◇ ↗</div><div class="ig-caption">把每一段平凡，都變成我們喜歡的日常。 #QuintusAndEva</div></div>
+        </article>
+        <article class="ig reveal">
+          <div class="ig-photo"><img src="https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="ig-meta"><div class="ig-top"><span class="avatar"></span><span class="ig-user">quintus.and.eva</span></div><div class="ig-icons">♡ ◇ ↗</div><div class="ig-caption">一起去更多地方，也一起回到同一個家。 #OurStory</div></div>
+        </article>
+        <article class="ig reveal">
+          <div class="ig-photo"><img src="https://images.unsplash.com/photo-1513278974582-3e1b4a4fa21f?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="ig-meta"><div class="ig-top"><span class="avatar"></span><span class="ig-user">quintus.and.eva</span></div><div class="ig-icons">♡ ◇ ↗</div><div class="ig-caption">Save the date. 2026.11.22 #WeddingDay</div></div>
+        </article>
+        <article class="ig reveal">
+          <div class="ig-photo"><img src="https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="ig-meta"><div class="ig-top"><span class="avatar"></span><span class="ig-user">quintus.and.eva</span></div><div class="ig-icons">♡ ◇ ↗</div><div class="ig-caption">那些笑得最自然的瞬間，是我們最喜歡的照片。</div></div>
+        </article>
+        <article class="ig reveal">
+          <div class="ig-photo"><img src="https://images.unsplash.com/photo-1519741347686-c1e0aadf4611?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="ig-meta"><div class="ig-top"><span class="avatar"></span><span class="ig-user">quintus.and.eva</span></div><div class="ig-icons">♡ ◇ ↗</div><div class="ig-caption">Forever sounds pretty good with you.</div></div>
+        </article>
+        <article class="ig reveal">
+          <div class="ig-photo"><img src="https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="ig-meta"><div class="ig-top"><span class="avatar"></span><span class="ig-user">quintus.and.eva</span></div><div class="ig-icons">♡ ◇ ↗</div><div class="ig-caption">距離婚禮，又更近了一點。 #AlmostThere</div></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Wedding Info ============ -->
+  <section class="section white" id="info">
+    <svg class="botanical top-left small parallax-leaf" data-depth="0.08" viewBox="0 0 430 430" aria-hidden="true">
+      <g class="watercolor-leaf">
+        <path d="M64 360C130 264 195 180 330 72" fill="none" stroke="#769487" stroke-width="6" opacity=".45"/>
+        <ellipse cx="120" cy="294" rx="24" ry="60" transform="rotate(42 120 294)" fill="#97bcb4" opacity=".4"/>
+        <ellipse cx="167" cy="239" rx="25" ry="66" transform="rotate(49 167 239)" fill="#88aa9d" opacity=".36"/>
+        <ellipse cx="224" cy="185" rx="24" ry="58" transform="rotate(52 224 185)" fill="#75967e" opacity=".38"/>
+        <ellipse cx="280" cy="132" rx="22" ry="52" transform="rotate(55 280 132)" fill="#afcbcc" opacity=".44"/>
+      </g>
+    </svg>
+
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="kicker">Wedding Information</p>
+        <h2>婚禮資訊</h2>
+      </div>
+      <div class="info-grid">
+        <article class="card reveal">
+          <h3>Date & Time</h3>
+          <p><strong>2026 年 11 月 22 日（星期日）</strong></p>
+          <p>17:30 入席<br>18:00 婚宴開始</p>
+          <p style="font-size:12px;color:#9b958e">＊目前時間為示範，可直接在單檔內修改。</p>
+        </article>
+        <article class="card reveal">
+          <h3>Venue</h3>
+          <p><strong>高雄萬豪酒店</strong><br>Kaohsiung Marriott Hotel</p>
+          <p>高雄市鼓山區龍德新路 222 號</p>
+          <a class="pill" href="https://maps.google.com/?q=高雄萬豪酒店" target="_blank" rel="noopener">⌖ 開啟 Google Maps</a>
+        </article>
+        <article class="card reveal">
+          <h3>Transportation</h3>
+          <ul>
+            <li>捷運：可搭乘高雄捷運至凹子底站，再轉乘計程車前往。</li>
+            <li>高鐵：由左營高鐵站搭計程車前往約 10–15 分鐘，依車況為準。</li>
+            <li>建議假日提早出發，以免遇上館內活動或周邊車潮。</li>
+          </ul>
+        </article>
+        <article class="card reveal">
+          <h3>Parking</h3>
+          <ul>
+            <li>飯店附設停車空間。</li>
+            <li>停車折抵與賓客優惠請以婚宴當日飯店公告為準。</li>
+            <li>抵達後可先向婚宴報到處確認停車折抵方式。</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Seat Lookup ============ -->
+  <section class="section soft" id="seat">
+    <div class="narrow">
+      <div class="section-head reveal">
+        <p class="kicker">Seat Lookup</p>
+        <h2>座位 / 桌次查詢</h2>
+      </div>
+      <div class="panel reveal">
+        <div class="seat-row">
+          <input type="text" id="seatName" placeholder="請輸入姓名，例如：王小明">
+          <button class="primary" id="seatBtn">查詢桌次</button>
+        </div>
+        <div class="seat-result" id="seatResult">目前為示範資料，輸入「王小明」即可測試。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RSVP ============ -->
+  <section class="section white" id="rsvp">
+    <div class="narrow">
+      <div class="section-head reveal">
+        <p class="kicker">RSVP</p>
+        <h2>出席回覆</h2>
+      </div>
+      <form class="panel reveal" id="rsvpForm">
+        <div class="two-col">
+          <div class="field">
+            <label>姓名</label>
+            <input name="name" required>
+          </div>
+          <div class="field">
+            <label>聯絡電話</label>
+            <input name="phone" inputmode="tel" required>
+          </div>
+          <div class="field">
+            <label>是否出席</label>
+            <select name="attendance" required>
+              <option value="">請選擇</option>
+              <option>出席</option>
+              <option>不克出席</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>出席人數</label>
+            <select name="guests">
+              <option>1</option><option>2</option><option>3</option><option>4</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>餐食需求</label>
+            <select name="meal">
+              <option>一般</option><option>素食</option><option>其他</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>與新人的關係</label>
+            <input name="relation" placeholder="例如：大學同學 / 親友">
+          </div>
+        </div>
+        <div class="field">
+          <label>想對新人說的話</label>
+          <textarea name="message" rows="5" placeholder="留下給 Quintus & Eva 的祝福 ♡"></textarea>
+        </div>
+        <button class="primary" type="submit">SEND RSVP</button>
+        <p class="status" id="rsvpStatus"></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============ Blessings ============ -->
+  <section class="section soft" id="blessings">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="kicker">Blessing Wall</p>
+        <h2>賓客祝福牆</h2>
+      </div>
+      <div class="blessing-layout">
+        <form class="panel reveal" id="blessingForm">
+          <div class="field">
+            <label>您的名字</label>
+            <input id="blessingName" required>
+          </div>
+          <div class="field">
+            <label>祝福內容</label>
+            <textarea id="blessingText" rows="5" required placeholder="寫下一句祝福 ♡"></textarea>
+          </div>
+          <button class="primary" type="submit">留下祝福</button>
+        </form>
+
+        <div class="blessing-list" id="blessingList">
+          <article class="note-card" style="--r:-1deg"><h4>王小美</h4><p>祝你們新婚快樂，往後每一天都像今天一樣充滿幸福！</p></article>
+          <article class="note-card" style="--r:1deg"><h4>陳先生</h4><p>願你們一起收藏更多旅行、笑聲與溫柔的日常。</p></article>
+          <article class="note-card" style="--r:.4deg"><h4>林同學</h4><p>Quintus & Eva，祝你們甜甜蜜蜜，幸福久久！</p></article>
+          <article class="note-card" style="--r:-.7deg"><h4>好朋友</h4><p>很開心能參與你們人生最重要的一天，期待婚禮見 ♡</p></article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p class="footer-name">Quintus & Eva</p>
+    <p>THANK YOU FOR BEING PART OF OUR STORY · 2026.11.22</p>
+  </footer>
+
+  <!-- 背景音樂：可換成自己的檔案或網址 -->
+  <audio id="bgMusic" loop preload="none">
+    <source src="wedding.mp3" type="audio/mpeg">
+  </audio>
+  <button class="music" id="musicBtn" aria-label="播放或暫停背景音樂">♪</button>
+
+  <script>
+    /* ============================================================
+       SETTINGS
+       ============================================================ */
+    const SETTINGS = {
+      weddingDate: "2026-11-22T18:00:00+08:00",
+      // Google Apps Script Web App URL
+      GAS_WEB_APP_URL: "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE"
+    };
+
+    /* ============================================================
+       Envelope opening
+       ============================================================ */
+    const opening = document.getElementById("opening");
+    const openInvitation = document.getElementById("openInvitation");
+    const bgMusic = document.getElementById("bgMusic");
+    const musicBtn = document.getElementById("musicBtn");
+    let musicPlaying = false;
+
+    openInvitation.addEventListener("click", () => {
+      // 先執行開信封動畫，不等待音樂載入，避免沒有 music 檔時卡住畫面
+      opening.classList.add("opened");
+
+      // 強制回到網站最上方，確保下一幕就是全螢幕 Hero
+      window.scrollTo(0, 0);
+
+      // 1.15 秒後淡出信封
+      setTimeout(() => {
+        opening.classList.add("hide");
+        document.body.classList.remove("locked");
+
+        // 再保險一次：開場結束後回到 Hero
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+
+        // 讓 Hero 有一個很短的進場感
+        document.querySelector(".hero-center")?.classList.add("hero-enter");
+      }, 1150);
+
+      // 動畫流程與音樂完全分開處理；
+      // music 檔不存在、載入慢、或瀏覽器禁止播放，都不會阻止進入網站。
+      bgMusic.play()
+        .then(() => {
+          musicPlaying = true;
+          musicBtn.classList.add("playing");
+          musicBtn.textContent = "Ⅱ";
+        })
+        .catch(() => {
+          musicPlaying = false;
+          musicBtn.classList.remove("playing");
+          musicBtn.textContent = "♪";
+        });
+    });
+
+    // 最終保險：若開場已經被點擊，但瀏覽器動畫或媒體狀態異常，
+    // 2.8 秒後仍會強制關閉開場遮罩。
+    let openingSafetyTimer = null;
+    openInvitation.addEventListener("click", () => {
+      clearTimeout(openingSafetyTimer);
+      openingSafetyTimer = setTimeout(() => {
+        opening.classList.add("hide");
+        document.body.classList.remove("locked");
+        window.scrollTo(0, 0);
+      }, 2800);
+    }, { once:true });
+
+    /* ============================================================
+       Navigation
+       ============================================================ */
+    const nav = document.getElementById("nav");
+    const menuBtn = document.getElementById("menuBtn");
+    const navLinks = document.getElementById("navLinks");
+
+    window.addEventListener("scroll", () => {
+      nav.classList.toggle("scrolled", window.scrollY > 40);
+    });
+
+    menuBtn.addEventListener("click", () => navLinks.classList.toggle("open"));
+    navLinks.querySelectorAll("a").forEach(a => a.addEventListener("click", () => navLinks.classList.remove("open")));
+
+    /* ============================================================
+       Background music
+       ============================================================ */
+    musicBtn.addEventListener("click", async () => {
+      try {
+        if (musicPlaying) {
+          bgMusic.pause();
+          musicPlaying = false;
+          musicBtn.classList.remove("playing");
+          musicBtn.textContent = "♪";
+        } else {
+          await bgMusic.play();
+          musicPlaying = true;
+          musicBtn.classList.add("playing");
+          musicBtn.textContent = "Ⅱ";
+        }
+      } catch (e) {
+        alert("目前找不到背景音樂檔。請把 wedding.mp3 放在 HTML 同一層，或修改 audio 的 src。");
+      }
+    });
+
+    /* ============================================================
+       Hero photo transition
+       ============================================================ */
+    const heroSlides = [...document.querySelectorAll(".slide")];
+    let heroIndex = 0;
+    setInterval(() => {
+      heroSlides[heroIndex].classList.remove("active");
+      heroIndex = (heroIndex + 1) % heroSlides.length;
+      heroSlides[heroIndex].classList.add("active");
+    }, 5000);
+
+    /* ============================================================
+       Cinema full-screen transition
+       ============================================================ */
+    const cinemaFrames = [...document.querySelectorAll(".cinema-frame")];
+    let cinemaIndex = 0;
+    setInterval(() => {
+      cinemaFrames[cinemaIndex].classList.remove("active");
+      cinemaIndex = (cinemaIndex + 1) % cinemaFrames.length;
+      cinemaFrames[cinemaIndex].classList.add("active");
+    }, 5200);
+
+    /* ============================================================
+       Reveal animation
+       ============================================================ */
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("show");
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: .14 });
+    document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+
+    /* ============================================================
+       Countdown
+       ============================================================ */
+    const weddingDate = new Date(SETTINGS.weddingDate);
+
+    function tick() {
+      const diff = weddingDate - new Date();
+      const ids = ["days","hours","minutes","seconds"];
+
+      if (diff <= 0) {
+        ids.forEach(id => document.getElementById(id).textContent = "00");
+        return;
+      }
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor(diff / 3600000) % 24;
+      const minutes = Math.floor(diff / 60000) % 60;
+      const seconds = Math.floor(diff / 1000) % 60;
+
+      document.getElementById("days").textContent = String(days).padStart(3,"0");
+      document.getElementById("hours").textContent = String(hours).padStart(2,"0");
+      document.getElementById("minutes").textContent = String(minutes).padStart(2,"0");
+      document.getElementById("seconds").textContent = String(seconds).padStart(2,"0");
+    }
+    tick();
+    setInterval(tick,1000);
+
+    /* ============================================================
+       Seat lookup — replace with your own guest list
+       ============================================================ */
+    const seatData = [
+      { name:"王小明", table:"A1 桌", seat:"1 號", note:"新郎好友席" },
+      { name:"陳美玲", table:"B3 桌", seat:"6 號", note:"新娘好友席" },
+      { name:"林冠宇", table:"C2 桌", seat:"3 號", note:"親友席" },
+      { name:"張雅婷", table:"主桌", seat:"親友席", note:"主桌" }
+    ];
+
+    const seatName = document.getElementById("seatName");
+    const seatResult = document.getElementById("seatResult");
+
+    function searchSeat() {
+      const keyword = seatName.value.trim();
+      if (!keyword) {
+        seatResult.textContent = "請先輸入姓名。";
+        return;
+      }
+      const found = seatData.find(x => x.name === keyword);
+      seatResult.innerHTML = found
+        ? `歡迎 <strong>${found.name}</strong><br>您的座位：<strong>${found.table}</strong>・${found.seat}<br>${found.note}`
+        : "目前查無資料，請確認姓名是否與回覆時相同，或洽現場服務人員。";
+    }
+
+    document.getElementById("seatBtn").addEventListener("click", searchSeat);
+    seatName.addEventListener("keydown", e => {
+      if (e.key === "Enter") searchSeat();
+    });
+
+    /* ============================================================
+       RSVP → Google Sheet
+       需要先部署 Google Apps Script Web App
+       ============================================================ */
+    const rsvpForm = document.getElementById("rsvpForm");
+    const rsvpStatus = document.getElementById("rsvpStatus");
+
+    rsvpForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const url = SETTINGS.GAS_WEB_APP_URL;
+
+      if (!url || url.includes("PASTE_YOUR")) {
+        rsvpStatus.textContent = "示範模式：表單已驗證完成。正式上線前，請填入 Google Apps Script Web App URL。";
+        return;
+      }
+
+      rsvpStatus.textContent = "送出中…";
+
+      const formData = new FormData(rsvpForm);
+      formData.append("timestamp", new Date().toISOString());
+      formData.append("type", "rsvp");
+
+      const payload = new URLSearchParams();
+      for (const [key, value] of formData.entries()) payload.append(key, value);
+
+      try {
+        await fetch(url, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+          body: payload.toString()
+        });
+        rsvpStatus.textContent = "已收到您的回覆，謝謝您 ♡";
+        rsvpForm.reset();
+      } catch (error) {
+        rsvpStatus.textContent = "目前無法送出，請稍後再試。";
+      }
+    });
+
+    /* ============================================================
+       Blessing Wall (demo: localStorage)
+       如果要所有賓客共用，可下一版改成 Google Sheet / Firebase
+       ============================================================ */
+    const blessingForm = document.getElementById("blessingForm");
+    const blessingList = document.getElementById("blessingList");
+    const storedBlessings = JSON.parse(localStorage.getItem("qe_blessings") || "[]");
+
+    function escapeHtml(text) {
+      return text.replace(/[&<>"']/g, ch => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[ch]));
+    }
+
+    function renderBlessing(item, prepend=true) {
+      const card = document.createElement("article");
+      card.className = "note-card";
+      card.style.setProperty("--r", `${(Math.random()*2-1).toFixed(2)}deg`);
+      card.innerHTML = `<h4>${escapeHtml(item.name)}</h4><p>${escapeHtml(item.text)}</p>`;
+      prepend ? blessingList.prepend(card) : blessingList.append(card);
+    }
+
+    storedBlessings.forEach(x => renderBlessing(x,false));
+
+    blessingForm.addEventListener("submit", e => {
+      e.preventDefault();
+      const name = document.getElementById("blessingName").value.trim();
+      const text = document.getElementById("blessingText").value.trim();
+      if (!name || !text) return;
+
+      const item = { name, text, time:Date.now() };
+      storedBlessings.push(item);
+      localStorage.setItem("qe_blessings", JSON.stringify(storedBlessings));
+      renderBlessing(item,true);
+      blessingForm.reset();
+    });
+
+    /* ============================================================
+       Soft watercolor botanical parallax
+       - scroll gives slow floating movement
+       - pointer movement is only used on non-touch / precise pointers
+       ============================================================ */
+    const parallaxLeaves = [...document.querySelectorAll(".parallax-leaf")];
+    let pointerX = 0, pointerY = 0;
+
+    if (window.matchMedia("(pointer:fine)").matches) {
+      window.addEventListener("pointermove", (e) => {
+        pointerX = (e.clientX / window.innerWidth - .5) * 12;
+        pointerY = (e.clientY / window.innerHeight - .5) * 9;
+      }, { passive:true });
+    }
+
+    function updateBotanicalParallax() {
+      const y = window.scrollY;
+      parallaxLeaves.forEach((el, i) => {
+        const depth = Number(el.dataset.depth || .1);
+        const scrollShift = (y * depth) % 42;
+        const dir = i % 2 === 0 ? 1 : -1;
+        el.style.setProperty("--px", `${(pointerX * depth * dir).toFixed(2)}px`);
+        el.style.setProperty("--py", `${(scrollShift + pointerY * depth).toFixed(2)}px`);
+      });
+    }
+
+    updateBotanicalParallax();
+    window.addEventListener("scroll", updateBotanicalParallax, { passive:true });
+    window.addEventListener("pointermove", updateBotanicalParallax, { passive:true });
+
+  </script>
+</body>
+</html>
