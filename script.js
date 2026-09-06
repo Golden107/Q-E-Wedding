@@ -122,23 +122,15 @@ tick();
 setInterval(tick, 1000);
 
 const seatName = document.getElementById("seatName");
-const seatPhone = document.getElementById("seatPhone");
 const seatResult = document.getElementById("seatResult");
 const seatBtn = document.getElementById("seatBtn");
 
 async function searchSeat() {
   const name = seatName.value.trim();
-  const phoneLast3 = seatPhone.value.replace(/\D/g, "").slice(-3);
 
   if (!name) {
     seatResult.textContent = "請先輸入姓名。";
     seatName.focus();
-    return;
-  }
-
-  if (phoneLast3.length !== 3) {
-    seatResult.textContent = "請輸入手機末三碼。";
-    seatPhone.focus();
     return;
   }
 
@@ -147,9 +139,9 @@ async function searchSeat() {
   seatResult.textContent = "正在查詢您的桌次…";
 
   try {
-    const url = SETTINGS.GAS_WEB_APP_URL + "?action=seat&name=" + encodeURIComponent(name) + "&phoneLast3=" + encodeURIComponent(phoneLast3) + "&_=" + Date.now();
+    const url = SETTINGS.GAS_WEB_APP_URL + "?action=seat&name=" + encodeURIComponent(name) + "&_=" + Date.now();
     const response = await fetch(url, {cache: "no-store"});
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -163,7 +155,7 @@ async function searchSeat() {
         `${data.seat ? `・${escapeHtml(String(data.seat))}` : ""}` +
         `${data.note ? `<br>${escapeHtml(String(data.note))}` : ""}`;
     } else {
-      seatResult.textContent = "查無資料，請確認姓名與手機末三碼是否正確。";
+      seatResult.textContent = "查無資料，請確認姓名是否正確。";
     }
   } catch (error) {
     console.error("Seat lookup failed:", error);
@@ -176,10 +168,8 @@ async function searchSeat() {
 
 seatBtn.addEventListener("click", searchSeat);
 
-[seatName, seatPhone].forEach(input => {
-  input.addEventListener("keydown", e => {
-    if (e.key === "Enter") searchSeat();
-  });
+seatName.addEventListener("keydown", e => {
+  if (e.key === "Enter") searchSeat();
 });
 
 const rsvpForm = document.getElementById("rsvpForm");

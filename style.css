@@ -1077,22 +1077,23 @@ textarea {
 
 .seat-row {
     display: flex;
-    gap: 10px
+    gap: 12px;
+    align-items: center;
 }
 
-.seat-result {
-    margin-top: 16px;
-    border-radius: 16px;
-    padding: 18px;
-    background: linear-gradient(135deg, rgba(220, 234, 230, .56), rgba(255, 255, 255, .78));
-    border: 1px solid rgba(111, 148, 137, .12);
-    color: #617068;
-    font-size: 14px
+.seat-row input {
+    flex: 1;
+    min-width: 0;
 }
 
-.seat-result strong {
-    font-size: 18px;
-    color: var(--sage-dark)
+.seat-row .primary {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 14px 28px;
+    height: 50px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .blessing-layout {
