@@ -10,18 +10,18 @@
   <!--
   ============================================================
   Quintus & Eva Wedding Invitation
-  Single-file v6 / RWD / Enlarged Invitation Date Badge / Fixed Hero Title Clipping / Envelope-to-Hero Transition / Watercolor Botanical Parallax
+  Single-file v7 / RWD / Google Sheet RSVP + Seat Lookup + Shared Blessing Wall / Enlarged Date Badge / Envelope Animation / Watercolor Botanical Parallax
   ============================================================
 
   【最常需要修改的位置】
   1. 搜尋 SETTINGS 修改婚禮日期、飯店、Google Sheet URL
   2. 搜尋 HERO_PHOTO_1 / 2 / 3 替換婚紗照
-  3. 搜尋 seatData 修改桌次資料
+  3. 桌次資料改由 Google Sheet 的 Seats 工作表管理
   4. 搜尋 wedding.mp3 修改背景音樂網址/檔名
 
-  Google Sheet RSVP：
-  將 GAS_WEB_APP_URL 改成你部署好的 Google Apps Script Web App URL。
-  本頁使用 URLSearchParams + no-cors POST，較容易與 GAS Web App 搭配。
+  Google Sheet：
+  本頁已串接 RSVP、桌次查詢、共用祝福牆。
+  後端需使用搭配的 Code.gs，並部署為 Google Apps Script Web App。
   -->
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1840,10 +1840,11 @@
       </div>
       <div class="panel reveal">
         <div class="seat-row">
-          <input type="text" id="seatName" placeholder="請輸入姓名，例如：王小明">
+          <input type="text" id="seatName" autocomplete="name" placeholder="請輸入姓名">
+          <input type="text" id="seatPhone" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="手機末三碼">
           <button class="primary" id="seatBtn">查詢桌次</button>
         </div>
-        <div class="seat-result" id="seatResult">目前為示範資料，輸入「王小明」即可測試。</div>
+        <div class="seat-result" id="seatResult">請輸入「姓名 + 手機末三碼」查詢桌次。</div>
       </div>
     </div>
   </section>
@@ -1923,25 +1924,17 @@
             <textarea id="blessingText" rows="5" required placeholder="寫下一句祝福 ♡"></textarea>
           </div>
           <button class="primary" type="submit">留下祝福</button>
+          <p class="status" id="blessingFormStatus"></p>
         </form>
 
-        <div class="blessing-list" id="blessingList">
-          <article class="note-card" style="--r:-1deg">
-            <h4>王小美</h4>
-            <p>祝你們新婚快樂，往後每一天都像今天一樣充滿幸福！</p>
-          </article>
-          <article class="note-card" style="--r:1deg">
-            <h4>陳先生</h4>
-            <p>願你們一起收藏更多旅行、笑聲與溫柔的日常。</p>
-          </article>
-          <article class="note-card" style="--r:.4deg">
-            <h4>林同學</h4>
-            <p>Quintus & Eva，祝你們甜甜蜜蜜，幸福久久！</p>
-          </article>
-          <article class="note-card" style="--r:-.7deg">
-            <h4>好朋友</h4>
-            <p>很開心能參與你們人生最重要的一天，期待婚禮見 ♡</p>
-          </article>
+        <div>
+          <p class="status" id="blessingStatus"></p>
+          <div class="blessing-list" id="blessingList">
+            <article class="note-card">
+              <h4>載入中…</h4>
+              <p>正在讀取賓客祝福 ♡</p>
+            </article>
+          </div>
         </div>
       </div>
     </div>
@@ -2054,7 +2047,7 @@
           musicBtn.textContent = "Ⅱ";
         }
       } catch (e) {
-        alert("目前找不到背景音樂檔。請把 wedding.mp3 放在 HTML 同一層，或修改 audio 的 src。");
+        alert("目前找不到背景音樂檔。請確認 Hand in Hand.mp3 與 index.html 位於同一層，或檢查 audio 的 src。");
       }
     });
 
@@ -2120,33 +2113,75 @@
     setInterval(tick, 1000);
 
     /* ============================================================
-       Seat lookup — replace with your own guest list
+       Seat lookup → Google Sheet
+       Seats 工作表欄位：
+       A 姓名 / B 手機末三碼 / C 桌次 / D 座位 / E 備註
        ============================================================ */
-    const seatData = [
-      {name: "王小明", table: "A1 桌", seat: "1 號", note: "新郎好友席"},
-      {name: "陳美玲", table: "B3 桌", seat: "6 號", note: "新娘好友席"},
-      {name: "林冠宇", table: "C2 桌", seat: "3 號", note: "親友席"},
-      {name: "張雅婷", table: "主桌", seat: "親友席", note: "主桌"}
-    ];
-
     const seatName = document.getElementById("seatName");
+    const seatPhone = document.getElementById("seatPhone");
     const seatResult = document.getElementById("seatResult");
+    const seatBtn = document.getElementById("seatBtn");
 
-    function searchSeat() {
-      const keyword = seatName.value.trim();
-      if (!keyword) {
+    async function searchSeat() {
+      const name = seatName.value.trim();
+      const phoneLast3 = seatPhone.value.replace(/\D/g, "").slice(-3);
+
+      if (!name) {
         seatResult.textContent = "請先輸入姓名。";
+        seatName.focus();
         return;
       }
-      const found = seatData.find(x => x.name === keyword);
-      seatResult.innerHTML = found
-        ? `歡迎 <strong>${found.name}</strong><br>您的座位：<strong>${found.table}</strong>・${found.seat}<br>${found.note}`
-        : "目前查無資料，請確認姓名是否與回覆時相同，或洽現場服務人員。";
+
+      if (phoneLast3.length !== 3) {
+        seatResult.textContent = "請輸入手機末三碼。";
+        seatPhone.focus();
+        return;
+      }
+
+      seatBtn.disabled = true;
+      seatBtn.textContent = "查詢中…";
+      seatResult.textContent = "正在查詢您的桌次…";
+
+      try {
+        const url =
+          SETTINGS.GAS_WEB_APP_URL +
+          "?action=seat" +
+          "&name=" + encodeURIComponent(name) +
+          "&phoneLast3=" + encodeURIComponent(phoneLast3) +
+          "&_=" + Date.now();
+
+        const response = await fetch(url, {cache: "no-store"});
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.found) {
+          seatResult.innerHTML =
+            `歡迎 <strong>${escapeHtml(String(data.name || ""))}</strong><br>` +
+            `您的桌次：<strong>${escapeHtml(String(data.table || "未安排"))}</strong>` +
+            `${data.seat ? `・${escapeHtml(String(data.seat))}` : ""}` +
+            `${data.note ? `<br>${escapeHtml(String(data.note))}` : ""}`;
+        } else {
+          seatResult.textContent = "查無資料，請確認姓名與手機末三碼是否正確。";
+        }
+      } catch (error) {
+        console.error("Seat lookup failed:", error);
+        seatResult.textContent = "目前無法查詢桌次，請稍後再試。";
+      } finally {
+        seatBtn.disabled = false;
+        seatBtn.textContent = "查詢桌次";
+      }
     }
 
-    document.getElementById("seatBtn").addEventListener("click", searchSeat);
-    seatName.addEventListener("keydown", e => {
-      if (e.key === "Enter") searchSeat();
+    seatBtn.addEventListener("click", searchSeat);
+
+    [seatName, seatPhone].forEach(input => {
+      input.addEventListener("keydown", e => {
+        if (e.key === "Enter") searchSeat();
+      });
     });
 
     /* ============================================================
@@ -2189,41 +2224,119 @@
     });
 
     /* ============================================================
-       Blessing Wall (demo: localStorage)
-       如果要所有賓客共用，可下一版改成 Google Sheet / Firebase
+       Blessing Wall → Google Sheet
+       Blessings 工作表欄位：
+       A 時間 / B 姓名 / C 祝福內容
        ============================================================ */
     const blessingForm = document.getElementById("blessingForm");
     const blessingList = document.getElementById("blessingList");
-    const storedBlessings = JSON.parse(localStorage.getItem("qe_blessings") || "[]");
+    const blessingStatus = document.getElementById("blessingStatus");
+    const blessingFormStatus = document.getElementById("blessingFormStatus");
 
     function escapeHtml(text) {
-      return text.replace(/[&<>"']/g, ch => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+      return String(text ?? "").replace(/[&<>"']/g, ch => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
       }[ch]));
     }
 
-    function renderBlessing(item, prepend = true) {
+    function renderBlessing(item, prepend = false) {
       const card = document.createElement("article");
       card.className = "note-card";
       card.style.setProperty("--r", `${(Math.random() * 2 - 1).toFixed(2)}deg`);
-      card.innerHTML = `<h4>${escapeHtml(item.name)}</h4><p>${escapeHtml(item.text)}</p>`;
+      card.innerHTML =
+        `<h4>${escapeHtml(item.name)}</h4>` +
+        `<p>${escapeHtml(item.text)}</p>`;
+
       prepend ? blessingList.prepend(card) : blessingList.append(card);
     }
 
-    storedBlessings.forEach(x => renderBlessing(x, false));
+    async function loadBlessings() {
+      blessingStatus.textContent = "正在更新祝福牆…";
 
-    blessingForm.addEventListener("submit", e => {
+      try {
+        const url =
+          SETTINGS.GAS_WEB_APP_URL +
+          "?action=blessings&_=" + Date.now();
+
+        const response = await fetch(url, {cache: "no-store"});
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        blessingList.innerHTML = "";
+
+        if (!Array.isArray(data) || data.length === 0) {
+          blessingList.innerHTML =
+            `<article class="note-card"><h4>第一則祝福</h4><p>還沒有留言，歡迎留下第一份祝福 ♡</p></article>`;
+          blessingStatus.textContent = "";
+          return;
+        }
+
+        [...data].reverse().forEach(item => renderBlessing(item));
+        blessingStatus.textContent = `目前共有 ${data.length} 則祝福 ♡`;
+
+      } catch (error) {
+        console.error("Blessing load failed:", error);
+        blessingList.innerHTML =
+          `<article class="note-card"><h4>讀取失敗</h4><p>目前無法讀取祝福牆，請稍後再試。</p></article>`;
+        blessingStatus.textContent = "";
+      }
+    }
+
+    blessingForm.addEventListener("submit", async e => {
       e.preventDefault();
-      const name = document.getElementById("blessingName").value.trim();
-      const text = document.getElementById("blessingText").value.trim();
-      if (!name || !text) return;
 
-      const item = {name, text, time: Date.now()};
-      storedBlessings.push(item);
-      localStorage.setItem("qe_blessings", JSON.stringify(storedBlessings));
-      renderBlessing(item, true);
-      blessingForm.reset();
+      const name = document.getElementById("blessingName").value.trim();
+      const textValue = document.getElementById("blessingText").value.trim();
+
+      if (!name || !textValue) return;
+
+      const submitBtn = blessingForm.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = "送出中…";
+      blessingFormStatus.textContent = "";
+
+      const payload = new URLSearchParams();
+      payload.append("type", "blessing");
+      payload.append("name", name);
+      payload.append("text", textValue);
+      payload.append("timestamp", new Date().toISOString());
+
+      try {
+        await fetch(SETTINGS.GAS_WEB_APP_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+          },
+          body: payload.toString()
+        });
+
+        blessingForm.reset();
+        blessingFormStatus.textContent = "祝福已送出，謝謝您 ♡";
+
+        // 給 Google Sheet 一點寫入時間，再重新讀取共享祝福牆
+        await new Promise(resolve => setTimeout(resolve, 900));
+        await loadBlessings();
+
+      } catch (error) {
+        console.error("Blessing submit failed:", error);
+        blessingFormStatus.textContent = "目前無法送出祝福，請稍後再試。";
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "留下祝福";
+      }
     });
+
+    // 頁面載入即讀取所有賓客共用的祝福
+    loadBlessings();
 
     /* ============================================================
        Soft watercolor botanical parallax
