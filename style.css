@@ -740,13 +740,17 @@ body::before {
     color: var(--muted);
 }
 
+/* ============================================================
+   婚紗精選跑馬燈 (修復版)
+   ============================================================ */
 .portrait-cinema {
     position: relative;
-    height: min(82vh, 820px);
-    min-height: 600px;
-    display: flex;
-    align-items: center;
+    width: 100%;
     overflow: hidden;
+    padding: 50px 0 110px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     background: radial-gradient(circle at 18% 12%, rgba(189, 214, 208, .38), transparent 30%), radial-gradient(circle at 82% 80%, rgba(173, 203, 209, .28), transparent 34%), linear-gradient(180deg, #e9efeb, #dfe8e4 48%, #d2dfda);
 }
 
@@ -755,7 +759,7 @@ body::before {
     z-index: 1;
     width: 100%;
     overflow: hidden;
-    padding: 44px 0 150px;
+    touch-action: pan-y;
 }
 
 .portrait-track {
@@ -765,36 +769,39 @@ body::before {
 }
 
 .portrait-track.is-ready {
-    animation: weddingPortraitMarquee 85s linear infinite;
+    animation: weddingPortraitMarquee 65s linear infinite;
 }
 
 .portrait-group {
     display: flex;
     align-items: center;
-    gap: clamp(10px, 1.25vw, 20px);
-    padding-inline: clamp(8px, 1vw, 14px);
+    gap: 16px;
+    padding-right: 16px;
 }
 
+/* 核心防破版設定：flex: 0 0 ... 嚴禁被 flexbox 壓成細條 */
 .portrait-card {
     position: relative;
-    flex: 0 0 clamp(190px, 17vw, 278px);
+    flex: 0 0 240px;
+    width: 240px;
     aspect-ratio: 2 / 3;
     margin: 0;
     overflow: hidden;
-    border-radius: 4px;
+    border-radius: 8px;
     background: #d8e2de;
-    box-shadow: 0 18px 42px rgba(37, 53, 48, .15);
+    box-shadow: 0 14px 36px rgba(37, 53, 48, .15);
     transform: translateY(0);
     transition: transform .5s ease, box-shadow .5s ease;
 }
 
 .portrait-card:nth-child(even) {
-    transform: translateY(10px);
+    transform: translateY(8px);
 }
 
 .portrait-card.featured {
-    flex-basis: clamp(215px, 19.5vw, 312px);
-    transform: translateY(-13px);
+    flex: 0 0 270px;
+    width: 270px;
+    transform: translateY(-10px);
 }
 
 .portrait-card img {
@@ -802,7 +809,9 @@ body::before {
     height: 100%;
     object-fit: cover;
     object-position: center;
-    transition: transform 1.1s ease;
+    pointer-events: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .portrait-card::after {
@@ -829,14 +838,14 @@ body::before {
     inset: 0;
     z-index: 3;
     pointer-events: none;
-    background: linear-gradient(90deg, rgba(220, 231, 226, .94), transparent 7%, transparent 93%, rgba(220, 231, 226, .94)), linear-gradient(180deg, transparent 48%, rgba(28, 43, 38, .50));
+    background: linear-gradient(90deg, rgba(220, 231, 226, .8), transparent 8%, transparent 92%, rgba(220, 231, 226, .8)), linear-gradient(180deg, transparent 48%, rgba(28, 43, 38, .40));
 }
 
 .cinema-caption {
     position: absolute;
     z-index: 5;
     left: 50%;
-    bottom: 27px;
+    bottom: 24px;
     transform: translateX(-50%);
     width: min(920px, calc(100% - 44px));
     text-align: center;
@@ -847,7 +856,7 @@ body::before {
 
 .cinema-caption small {
     display: block;
-    letter-spacing: .29em;
+    letter-spacing: .25em;
     font-size: 10px;
     opacity: .92;
 }
@@ -855,9 +864,9 @@ body::before {
 .cinema-caption h2 {
     margin: 4px 0 0;
     font-family: "Great Vibes", cursive;
-    font-size: clamp(48px, 7vw, 88px);
+    font-size: clamp(38px, 6vw, 68px);
     font-weight: 400;
-    line-height: 1;
+    line-height: 1.1;
 }
 
 @media (hover:hover) {
@@ -866,23 +875,14 @@ body::before {
     }
 
     .portrait-card:hover {
-        transform: translateY(-12px);
-        box-shadow: 0 28px 64px rgba(37, 53, 48, .21);
-    }
-
-    .portrait-card:nth-child(even):hover {
-        transform: translateY(-4px);
-    }
-
-    .portrait-card.featured:hover {
-        transform: translateY(-22px);
-    }
-
-    .portrait-card:hover img {
-        transform: scale(1.035);
+        transform: translateY(-8px);
+        box-shadow: 0 24px 50px rgba(37, 53, 48, .22);
     }
 }
 
+/* ============================================================
+   其他區塊
+   ============================================================ */
 .ig-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -924,10 +924,17 @@ body::before {
 }
 
 .avatar {
-    width: 28px;
-    height: 28px;
+    display: inline-block;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--blue), var(--sage));
+    overflow: hidden;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .ig-user {
@@ -1173,6 +1180,9 @@ footer p {
     transform: none;
 }
 
+/* ============================================================
+   RWD 平板與手機適配
+   ============================================================ */
 @media(max-width:900px) {
     .nav-links {
         position: absolute;
@@ -1216,34 +1226,27 @@ footer p {
     }
 
     .portrait-cinema {
-        min-height: 590px;
-        height: 74vh;
-    }
-
-    .portrait-marquee {
-        padding: 38px 0 140px;
+        padding: 40px 0 100px;
     }
 
     .portrait-card {
-        flex-basis: clamp(180px, 30vw, 250px);
+        flex: 0 0 200px;
+        width: 200px;
     }
 
     .portrait-card.featured {
-        flex-basis: clamp(200px, 33vw, 272px);
-    }
-
-    .portrait-track.is-ready {
-        animation-duration: 95s;
+        flex: 0 0 220px;
+        width: 220px;
     }
 }
 
 @media(max-width:680px) {
     .section {
-        padding: 78px 0;
+        padding: 70px 0;
     }
 
     .hero-names {
-        font-size: clamp(56px, 16vw, 76px);
+        font-size: clamp(54px, 15vw, 76px);
     }
 
     .info-grid,
@@ -1269,52 +1272,50 @@ footer p {
         right: auto;
     }
 
+    /* 手機版跑馬燈精準修復 */
     .portrait-cinema {
-        min-height: 560px;
-        height: 72vh;
-    }
-
-    .portrait-marquee {
-        padding: 30px 0 132px;
+        padding: 30px 0 85px;
     }
 
     .portrait-group {
-        gap: 10px;
-        padding-inline: 5px;
+        gap: 12px;
+        padding-right: 12px;
     }
 
+    /* 手機上固定寬高比例，絕不被壓成細條 */
     .portrait-card {
-        flex-basis: 44vw;
-        min-width: 165px;
-        max-width: 220px;
+        flex: 0 0 160px;
+        width: 160px;
+        border-radius: 6px;
+        box-shadow: 0 8px 20px rgba(37, 53, 48, .12);
     }
 
     .portrait-card.featured {
-        flex-basis: 48vw;
-        min-width: 178px;
-        max-width: 238px;
-        transform: translateY(-8px);
+        flex: 0 0 175px;
+        width: 175px;
+        transform: translateY(-6px);
     }
 
     .portrait-card:nth-child(even) {
-        transform: translateY(7px);
+        transform: translateY(6px);
     }
 
     .portrait-track.is-ready {
-        animation-duration: 105s;
+        animation-duration: 48s;
+        /* 手機上適度調快更自然 */
     }
 
     .cinema-caption {
-        bottom: 22px;
+        bottom: 16px;
     }
 
     .cinema-caption small {
         font-size: 8px;
-        letter-spacing: .19em;
+        letter-spacing: .18em;
     }
 
     .cinema-caption h2 {
-        font-size: clamp(42px, 13vw, 62px);
+        font-size: 38px;
     }
 
     .seat-row {
@@ -1352,19 +1353,14 @@ footer p {
         grid-template-columns: 1fr;
     }
 
-    .portrait-cinema {
-        min-height: 530px;
-        height: 70vh;
-    }
-
     .portrait-card {
-        flex-basis: 46vw;
-        min-width: 158px;
+        flex: 0 0 150px;
+        width: 150px;
     }
 
     .portrait-card.featured {
-        flex-basis: 51vw;
-        min-width: 176px;
+        flex: 0 0 165px;
+        width: 165px;
     }
 }
 
@@ -1378,23 +1374,4 @@ footer p {
         transition-duration: .001ms !important;
         scroll-behavior: auto !important;
     }
-}
-
-.avatar {
-    display: inline-block;
-    width: 48px;
-    /* 頭像寬度 */
-    height: 48px;
-    /* 頭像高度 */
-    border-radius: 50%;
-    /* 裁切成正圓形 */
-    overflow: hidden;
-    /* 隱藏超出圓圈的部分 */
-}
-
-.avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    /* 防止圖片變形，自動填滿裁切 */
 }

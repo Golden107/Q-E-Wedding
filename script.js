@@ -65,7 +65,7 @@ musicBtn?.addEventListener("click", async () => {
     }
   } catch (error) {
     console.error("Music error:", error);
-    alert("目前無法播放背景音樂，請確認 Hand in Hand.mp3 與 index.html 位於同一層。");
+    alert("目前無法播放背景音樂，請確認音樂檔案與 index.html 位於同一層。");
   }
 });
 
@@ -79,23 +79,26 @@ if (heroSlides.length > 1) {
   }, 5000);
 }
 
+// ==========================================
+// 婚紗跑馬燈：自動複製第二組並啟動平滑動畫
+// ==========================================
 const portraitTrack = document.getElementById("portraitTrack");
 const portraitGroup = document.getElementById("portraitGroup");
 if (portraitTrack && portraitGroup) {
-  const clonedGroup = portraitGroup.cloneNode(true);
-  clonedGroup.removeAttribute("id");
-  clonedGroup.setAttribute("aria-hidden", "true");
-  clonedGroup.querySelectorAll("img").forEach(image => {
-    image.alt = "";
-    image.loading = "lazy";
-  });
-  portraitTrack.appendChild(clonedGroup);
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      portraitTrack.classList.add("is-ready");
+  // 避免重複複製
+  if (portraitTrack.children.length === 1) {
+    const clonedGroup = portraitGroup.cloneNode(true);
+    clonedGroup.removeAttribute("id");
+    clonedGroup.setAttribute("aria-hidden", "true");
+    clonedGroup.querySelectorAll("img").forEach(image => {
+      image.alt = "";
+      image.loading = "lazy";
     });
-  });
+    portraitTrack.appendChild(clonedGroup);
+  }
+
+  // 立即啟動 CSS 動畫
+  portraitTrack.classList.add("is-ready");
 }
 
 const revealObserver = new IntersectionObserver(entries => {
